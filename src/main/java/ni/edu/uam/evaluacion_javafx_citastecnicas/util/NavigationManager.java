@@ -1,4 +1,4 @@
 package ni.edu.uam.evaluacion_javafx_citastecnicas.util;
 
-public class Util {
+public class NavigationManager {
 }
