@@ -1,0 +1,12 @@
+module ni.edu.uam.evaluacion_javafx_citastecnicas {
+    requires javafx.controls;
+    requires javafx.fxml;
+    requires lombok;
+
+    opens ni.edu.uam.evaluacion_javafx_citastecnicas to javafx.fxml;
+    exports ni.edu.uam.evaluacion_javafx_citastecnicas;
+    exports ni.edu.uam.evaluacion_javafx_citastecnicas.application;
+    opens ni.edu.uam.evaluacion_javafx_citastecnicas.application to javafx.fxml;
+    exports ni.edu.uam.evaluacion_javafx_citastecnicas.controller;
+    opens ni.edu.uam.evaluacion_javafx_citastecnicas.controller to javafx.fxml;
+}
