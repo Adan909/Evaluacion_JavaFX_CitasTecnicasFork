@@ -10,10 +10,21 @@ import java.io.IOException;
 public class MainApp extends Application {
     @Override
     public void start(Stage stage) throws IOException {
-        FXMLLoader fxmlLoader = new FXMLLoader(MainApp.class.getResource("menu-view.fxml"));
-        Scene scene = new Scene(fxmlLoader.load(), 320, 240);
-        stage.setTitle("Hello!");
+        // 1. Usar la ruta absoluta desde resources con la barra inicial '/'
+        FXMLLoader fxmlLoader = new FXMLLoader(MainApp.class.getResource("/ni/edu/uam/evaluacion_javafx_citastecnicas/fxml/menu-view.fxml"));
+
+        // 2. Quitar el 320, 240 para que respete los 1100x700 que definiste en Scene Builder
+        Scene scene = new Scene(fxmlLoader.load());
+
+        stage.setTitle("TecnoAsistencia Nicaragua S.A.");
         stage.setScene(scene);
+
+        // Opcional: Centrar la ventana en la pantalla
+        stage.centerOnScreen();
         stage.show();
+    }
+
+    public static void main(String[] args) {
+        launch();
     }
 }
