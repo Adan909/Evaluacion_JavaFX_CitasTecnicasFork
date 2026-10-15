@@ -1,6 +1,6 @@
 # Sistema de Gestión de Citas Técnicas
 
-## Tecnologías
+## Integrantes
 - ANDREA SOFIA DE LA ROCA DELGADO
 - NAZARIO ESCOTO LARGAESPADA
 - ALFREDO DAVID MONTALVAN OSEJO
@@ -25,7 +25,7 @@ Sistema de escritorio desarrollado en Java con JavaFX y PostgreSQL para la admin
 - Búsqueda y filtrado de registros.
 - Validación de datos.
 
-## Instalación y ejecución
+## Ejecución
 1. Instalar JDK 21, PostgreSQL e IntelliJ IDEA.
 2. Crear la base de datos `gestion_citas` y ejecutar el script SQL incluido en el proyecto.
 3. Configurar las credenciales de PostgreSQL en `DatabaseConnection.java`.
