@@ -2,7 +2,7 @@ package ni.edu.uam.evaluacion_javafx_citastecnicas.dao;
 
 import ni.edu.uam.evaluacion_javafx_citastecnicas.model.Cita;
 import ni.edu.uam.evaluacion_javafx_citastecnicas.model.Cliente;
-import ni.edu.uam.evaluacion_javafx_citastecnicas.config.ConexionDB;
+import ni.edu.uam.evaluacion_javafx_citastecnicas.config.DatabaseConnection;
 
 import java.sql.*;
 import java.util.ArrayList;
@@ -12,7 +12,7 @@ public class CitaDAO {
 
     public boolean insertar(Cita cita) throws SQLException {
         String sql = "INSERT INTO cita_tecnica (cliente_id, fecha, hora, tipo_servicio, descripcion, estado) VALUES (?, ?, ?, ?, ?, ?)";
-        try (Connection conn = ConexionDB.getConnection();
+        try (Connection conn = DatabaseConnection.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
             pstmt.setInt(1, cita.getCliente().getId());
             pstmt.setDate(2, Date.valueOf(cita.getFecha()));
@@ -29,7 +29,7 @@ public class CitaDAO {
         // Hacemos JOIN para traer los datos del cliente, necesario para el TableView
         String sql = "SELECT c.*, cl.nombres, cl.apellidos, cl.telefono, cl.correo, cl.activo " +
                 "FROM cita_tecnica c INNER JOIN cliente cl ON c.cliente_id = cl.id";
-        try (Connection conn = ConexionDB.getConnection();
+        try (Connection conn = DatabaseConnection.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql);
              ResultSet rs = pstmt.executeQuery()) {
             while (rs.next()) {
@@ -57,7 +57,7 @@ public class CitaDAO {
 
     public boolean actualizar(Cita cita) throws SQLException {
         String sql = "UPDATE cita_tecnica SET cliente_id=?, fecha=?, hora=?, tipo_servicio=?, descripcion=?, estado=? WHERE id=?";
-        try (Connection conn = ConexionDB.getConnection();
+        try (Connection conn = DatabaseConnection.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
             pstmt.setInt(1, cita.getCliente().getId());
             pstmt.setDate(2, Date.valueOf(cita.getFecha()));
@@ -72,7 +72,7 @@ public class CitaDAO {
 
     public boolean eliminar(int id) throws SQLException {
         String sql = "DELETE FROM cita_tecnica WHERE id=?";
-        try (Connection conn = ConexionDB.getConnection();
+        try (Connection conn = DatabaseConnection.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
             pstmt.setInt(1, id);
             return pstmt.executeUpdate() > 0;

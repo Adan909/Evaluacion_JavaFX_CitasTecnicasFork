@@ -1,11 +1,11 @@
-package ni.edu.uam.evaluacion_javafx_citastecnicas.util;
+package ni.edu.uam.evaluacion_javafx_citastecnicas.config;
 
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.sql.Statement;
 
-public class ConexionDB {
+public class DatabaseConnection {
     // aquí se configuran las credenciales locales para poder ejecutar la conexión, revisar documentación
     private static final String URL = "jdbc:postgresql://localhost:5432/gestion_citas";
     private static final String USER = "postgres";
