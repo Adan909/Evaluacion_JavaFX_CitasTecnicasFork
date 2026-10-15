@@ -1,5 +1,6 @@
 package ni.edu.uam.evaluacion_javafx_citastecnicas.controller;
 
+import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
@@ -66,13 +67,32 @@ public class ClienteController implements Initializable {
     }
 
     private void cargarClientes() {
-        try {
-            listaClientes.setAll(clienteDAO.obtenerTodos());
-            tblClientes.setItems(listaClientes);
-            actualizarContador();
-        } catch (SQLException e) {
-            mostrarAlerta(Alert.AlertType.ERROR, "Error BD", "No se pudieron cargar los clientes: " + e.getMessage());
-        }
+        // 1. Creamos un nuevo hilo en segundo plano
+        Thread hiloCarga = new Thread(() -> {
+            try {
+                // TAREA PESADA: Consultar la base de datos (se ejecuta fuera del hilo principal)
+                var clientesDesdeBD = clienteDAO.obtenerTodos();
+
+                // 2. TAREA GRÁFICA: Actualizar la tabla (obligatorio usar Platform.runLater)
+                Platform.runLater(() -> {
+                    listaClientes.setAll(clientesDesdeBD);
+                    tblClientes.setItems(listaClientes);
+                    actualizarContador();
+                });
+
+            } catch (SQLException e) {
+                // Las alertas también son elementos gráficos, van en runLater
+                Platform.runLater(() -> {
+                    mostrarAlerta(Alert.AlertType.ERROR, "Error BD", "No se pudieron cargar los clientes: " + e.getMessage());
+                });
+            }
+        });
+
+        // Convertimos el hilo en 'Daemon' para que se destruya automáticamente si cierras la aplicación
+        hiloCarga.setDaemon(true);
+
+        // 3. Iniciamos el hilo
+        hiloCarga.start();
     }
 
     private void configurarEventosTabla() {
