@@ -1,5 +1,6 @@
 package ni.edu.uam.evaluacion_javafx_citastecnicas.controller;
 
+import javafx.application.Platform;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -72,34 +73,53 @@ public class CitaController implements Initializable {
     }
 
     private void cargarCombos() {
-        try {
-            ObservableList<Cliente> clientes = FXCollections.observableArrayList(
-                    clienteDAO.obtenerTodos().stream().filter(Cliente::getActivo).collect(Collectors.toList())
-            );
-            cmbCliente.setItems(clientes);
+        Thread hiloCombos = new Thread(() -> {
+            try {
+                var clientesDesdeBD = clienteDAO.obtenerTodos().stream()
+                        .filter(Cliente::getActivo)
+                        .collect(Collectors.toList());
 
-            // Convertidor para mostrar el nombre completo en el ComboBox
-            cmbCliente.setConverter(new StringConverter<Cliente>() {
-                @Override
-                public String toString(Cliente cliente) {
-                    return cliente == null ? "" : cliente.getNombres() + " " + cliente.getApellidos();
-                }
-                @Override
-                public Cliente fromString(String string) { return null; }
-            });
-        } catch (SQLException e) {
-            mostrarAlerta(Alert.AlertType.ERROR, "Error", "No se pudieron cargar los clientes.");
-        }
+                Platform.runLater(() -> {
+                    ObservableList<Cliente> clientes = FXCollections.observableArrayList(clientesDesdeBD);
+                    cmbCliente.setItems(clientes);
+
+                    // Convertidor para mostrar el nombre completo en el ComboBox
+                    cmbCliente.setConverter(new StringConverter<Cliente>() {
+                        @Override
+                        public String toString(Cliente cliente) {
+                            return cliente == null ? "" : cliente.getNombres() + " " + cliente.getApellidos();
+                        }
+                        @Override
+                        public Cliente fromString(String string) { return null; }
+                    });
+                });
+            } catch (SQLException e) {
+                Platform.runLater(() -> {
+                    mostrarAlerta(Alert.AlertType.ERROR, "Error BD", "No se pudieron cargar los clientes: " + e.getMessage());
+                });
+            }
+        });
+        hiloCombos.setDaemon(true);
+        hiloCombos.start();
     }
 
     private void cargarCitas() {
-        try {
-            listaCitas.setAll(citaDAO.obtenerTodas());
-            tblCitas.setItems(listaCitas);
-            actualizarContador();
-        } catch (SQLException e) {
-            mostrarAlerta(Alert.AlertType.ERROR, "Error BD", "No se pudieron cargar las citas: " + e.getMessage());
-        }
+        Thread hiloCitas = new Thread(() -> {
+            try {
+                var citasDesdeBD = citaDAO.obtenerTodas();
+                Platform.runLater(() -> {
+                    listaCitas.setAll(citasDesdeBD);
+                    tblCitas.setItems(listaCitas);
+                    actualizarContador();
+                });
+            } catch (SQLException e) {
+                Platform.runLater(() -> {
+                    mostrarAlerta(Alert.AlertType.ERROR, "Error BD", "No se pudieron cargar las citas: " + e.getMessage());
+                });
+            }
+        });
+        hiloCitas.setDaemon(true);
+        hiloCitas.start();
     }
 
     private void configurarEventos() {
@@ -140,15 +160,23 @@ public class CitaController implements Initializable {
         Cita nuevaCita = new Cita(null, cmbCliente.getValue(), dpFecha.getValue(), horaSeleccionada,
                 cmbTipoServicio.getValue(), txtDescripcion.getText().trim(), cmbEstado.getValue());
 
-        try {
-            if (citaDAO.insertar(nuevaCita)) {
-                mostrarAlerta(Alert.AlertType.INFORMATION, "Éxito", "Cita registrada correctamente.");
-                onLimpiar(null);
-                cargarCitas();
+        Thread hiloGuardar = new Thread(() -> {
+            try {
+                if (citaDAO.insertar(nuevaCita)) {
+                    Platform.runLater(() -> {
+                        mostrarAlerta(Alert.AlertType.INFORMATION, "Éxito", "Cita registrada correctamente.");
+                        onLimpiar(null);
+                        cargarCitas();
+                    });
+                }
+            } catch (SQLException e) {
+                Platform.runLater(() -> {
+                    mostrarAlerta(Alert.AlertType.ERROR, "Error BD", "Error al guardar la cita: " + e.getMessage());
+                });
             }
-        } catch (SQLException e) {
-            mostrarAlerta(Alert.AlertType.ERROR, "Error BD", "Error al guardar la cita: " + e.getMessage());
-        }
+        });
+        hiloGuardar.setDaemon(true);
+        hiloGuardar.start();
     }
 
     @FXML
@@ -166,15 +194,25 @@ public class CitaController implements Initializable {
         citaSeleccionada.setEstado(cmbEstado.getValue());
         citaSeleccionada.setDescripcion(txtDescripcion.getText().trim());
 
-        try {
-            if (citaDAO.actualizar(citaSeleccionada)) {
-                mostrarAlerta(Alert.AlertType.INFORMATION, "Éxito", "Cita actualizada correctamente.");
-                onLimpiar(null);
-                cargarCitas();
+        Cita citaAActualizar = citaSeleccionada;
+
+        Thread hiloActualizar = new Thread(() -> {
+            try {
+                if (citaDAO.actualizar(citaAActualizar)) {
+                    Platform.runLater(() -> {
+                        mostrarAlerta(Alert.AlertType.INFORMATION, "Éxito", "Cita actualizada correctamente.");
+                        onLimpiar(null);
+                        cargarCitas();
+                    });
+                }
+            } catch (SQLException e) {
+                Platform.runLater(() -> {
+                    mostrarAlerta(Alert.AlertType.ERROR, "Error BD", "Error al actualizar la cita: " + e.getMessage());
+                });
             }
-        } catch (SQLException e) {
-            mostrarAlerta(Alert.AlertType.ERROR, "Error BD", "Error al actualizar la cita: " + e.getMessage());
-        }
+        });
+        hiloActualizar.setDaemon(true);
+        hiloActualizar.start();
     }
 
     @FXML
@@ -190,15 +228,24 @@ public class CitaController implements Initializable {
         Optional<ButtonType> resultado = confirmacion.showAndWait();
 
         if (resultado.isPresent() && resultado.get() == ButtonType.OK) {
-            try {
-                if (citaDAO.eliminar(citaSeleccionada.getId())) {
-                    mostrarAlerta(Alert.AlertType.INFORMATION, "Éxito", "Cita eliminada correctamente.");
-                    onLimpiar(null);
-                    cargarCitas();
+            int idEliminar = citaSeleccionada.getId();
+            Thread hiloEliminar = new Thread(() -> {
+                try {
+                    if (citaDAO.eliminar(idEliminar)) {
+                        Platform.runLater(() -> {
+                            mostrarAlerta(Alert.AlertType.INFORMATION, "Éxito", "Cita eliminada correctamente.");
+                            onLimpiar(null);
+                            cargarCitas();
+                        });
+                    }
+                } catch (SQLException e) {
+                    Platform.runLater(() -> {
+                        mostrarAlerta(Alert.AlertType.ERROR, "Error BD", "Error al eliminar la cita: " + e.getMessage());
+                    });
                 }
-            } catch (SQLException e) {
-                mostrarAlerta(Alert.AlertType.ERROR, "Error BD", "Error al eliminar la cita: " + e.getMessage());
-            }
+            });
+            hiloEliminar.setDaemon(true);
+            hiloEliminar.start();
         }
     }
 

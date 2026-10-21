@@ -1,10 +1,5 @@
 package ni.edu.uam.evaluacion_javafx_citastecnicas.model;
 
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
-
-@Data @NoArgsConstructor @AllArgsConstructor
 public class Cliente {
     private Integer id;
     private String nombres;
@@ -12,4 +7,69 @@ public class Cliente {
     private String telefono;
     private String correo;
     private Boolean activo;
+
+    public Cliente() {
+    }
+
+    public Cliente(Integer id, String nombres, String apellidos, String telefono, String correo, Boolean activo) {
+        this.id = id;
+        this.nombres = nombres;
+        this.apellidos = apellidos;
+        this.telefono = telefono;
+        this.correo = correo;
+        this.activo = activo;
+    }
+
+    public Integer getId() {
+        return id;
+    }
+
+    public void setId(Integer id) {
+        this.id = id;
+    }
+
+    public String getNombres() {
+        return nombres;
+    }
+
+    public void setNombres(String nombres) {
+        this.nombres = nombres;
+    }
+
+    public String getApellidos() {
+        return apellidos;
+    }
+
+    public void setApellidos(String apellidos) {
+        this.apellidos = apellidos;
+    }
+
+    public String getTelefono() {
+        return telefono;
+    }
+
+    public void setTelefono(String telefono) {
+        this.telefono = telefono;
+    }
+
+    public String getCorreo() {
+        return correo;
+    }
+
+    public void setCorreo(String correo) {
+        this.correo = correo;
+    }
+
+    public Boolean getActivo() {
+        return activo;
+    }
+
+    public void setActivo(Boolean activo) {
+        this.activo = activo;
+    }
+
+    @Override
+    public String toString() {
+        return (nombres != null ? nombres : "") + " " + (apellidos != null ? apellidos : "");
+    }
 }

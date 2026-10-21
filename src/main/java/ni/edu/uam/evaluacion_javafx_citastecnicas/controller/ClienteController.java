@@ -115,19 +115,27 @@ public class ClienteController implements Initializable {
         Cliente nuevoCliente = new Cliente(null, txtNombres.getText().trim(), txtApellidos.getText().trim(),
                 txtTelefono.getText().trim(), txtCorreo.getText().trim(), chkActivo.isSelected());
 
-        try {
-            if (clienteDAO.insertar(nuevoCliente)) {
-                mostrarAlerta(Alert.AlertType.INFORMATION, "Éxito", "Cliente registrado correctamente.");
-                onLimpiar(null);
-                cargarClientes();
+        Thread hiloGuardar = new Thread(() -> {
+            try {
+                if (clienteDAO.insertar(nuevoCliente)) {
+                    Platform.runLater(() -> {
+                        mostrarAlerta(Alert.AlertType.INFORMATION, "Éxito", "Cliente registrado correctamente.");
+                        onLimpiar(null);
+                        cargarClientes();
+                    });
+                }
+            } catch (SQLException e) {
+                Platform.runLater(() -> {
+                    if ("23505".equals(e.getSQLState())) { // Código común para unique violation en Postgres
+                        mostrarAlerta(Alert.AlertType.ERROR, "Error", "El correo electrónico ya está registrado.");
+                    } else {
+                        mostrarAlerta(Alert.AlertType.ERROR, "Error BD", "Error al guardar el cliente: " + e.getMessage());
+                    }
+                });
             }
-        } catch (SQLException e) {
-            if (e.getSQLState().equals("23505")) { // Código común para unique violation en Postgres
-                mostrarAlerta(Alert.AlertType.ERROR, "Error", "El correo electrónico ya está registrado.");
-            } else {
-                mostrarAlerta(Alert.AlertType.ERROR, "Error BD", "Error al guardar el cliente: " + e.getMessage());
-            }
-        }
+        });
+        hiloGuardar.setDaemon(true);
+        hiloGuardar.start();
     }
 
     @FXML
@@ -144,15 +152,25 @@ public class ClienteController implements Initializable {
         clienteSeleccionado.setCorreo(txtCorreo.getText().trim());
         clienteSeleccionado.setActivo(chkActivo.isSelected());
 
-        try {
-            if (clienteDAO.actualizar(clienteSeleccionado)) {
-                mostrarAlerta(Alert.AlertType.INFORMATION, "Éxito", "Cliente actualizado correctamente.");
-                onLimpiar(null);
-                cargarClientes();
+        Cliente clienteAActualizar = clienteSeleccionado;
+
+        Thread hiloActualizar = new Thread(() -> {
+            try {
+                if (clienteDAO.actualizar(clienteAActualizar)) {
+                    Platform.runLater(() -> {
+                        mostrarAlerta(Alert.AlertType.INFORMATION, "Éxito", "Cliente actualizado correctamente.");
+                        onLimpiar(null);
+                        cargarClientes();
+                    });
+                }
+            } catch (SQLException e) {
+                Platform.runLater(() -> {
+                    mostrarAlerta(Alert.AlertType.ERROR, "Error BD", "Error al actualizar el cliente: " + e.getMessage());
+                });
             }
-        } catch (SQLException e) {
-            mostrarAlerta(Alert.AlertType.ERROR, "Error BD", "Error al actualizar el cliente: " + e.getMessage());
-        }
+        });
+        hiloActualizar.setDaemon(true);
+        hiloActualizar.start();
     }
 
     @FXML
@@ -168,20 +186,29 @@ public class ClienteController implements Initializable {
         Optional<ButtonType> resultado = confirmacion.showAndWait();
 
         if (resultado.isPresent() && resultado.get() == ButtonType.OK) {
-            try {
-                if (clienteDAO.eliminar(clienteSeleccionado.getId())) {
-                    mostrarAlerta(Alert.AlertType.INFORMATION, "Éxito", "Cliente eliminado correctamente.");
-                    onLimpiar(null);
-                    cargarClientes();
+            int idEliminar = clienteSeleccionado.getId();
+            Thread hiloEliminar = new Thread(() -> {
+                try {
+                    if (clienteDAO.eliminar(idEliminar)) {
+                        Platform.runLater(() -> {
+                            mostrarAlerta(Alert.AlertType.INFORMATION, "Éxito", "Cliente eliminado correctamente.");
+                            onLimpiar(null);
+                            cargarClientes();
+                        });
+                    }
+                } catch (SQLException e) {
+                    Platform.runLater(() -> {
+                        // Violación de llave foránea (intentar eliminar cliente con citas asociadas)
+                        if (e.getSQLState() != null && e.getSQLState().startsWith("23")) {
+                            mostrarAlerta(Alert.AlertType.ERROR, "Eliminación Restringida", "No se puede eliminar el cliente porque tiene citas técnicas asociadas.");
+                        } else {
+                            mostrarAlerta(Alert.AlertType.ERROR, "Error BD", "Error al eliminar el cliente: " + e.getMessage());
+                        }
+                    });
                 }
-            } catch (SQLException e) {
-                // Violación de llave foránea (intentar eliminar cliente con citas asociadas)
-                if (e.getSQLState().startsWith("23")) {
-                    mostrarAlerta(Alert.AlertType.ERROR, "Eliminación Restringida", "No se puede eliminar el cliente porque tiene citas técnicas asociadas.");
-                } else {
-                    mostrarAlerta(Alert.AlertType.ERROR, "Error BD", "Error al eliminar el cliente: " + e.getMessage());
-                }
-            }
+            });
+            hiloEliminar.setDaemon(true);
+            hiloEliminar.start();
         }
     }
 
